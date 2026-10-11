@@ -1,0 +1,7 @@
+*.out
+*.exe
+*.out
+
+examples/.xmake/
+examples/build/
+examples/.vscode/

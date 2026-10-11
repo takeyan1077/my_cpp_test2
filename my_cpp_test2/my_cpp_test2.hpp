@@ -9,8 +9,10 @@ namespace MyTest {
 	struct TestCase {
 		VoidFunc func;
 		str name;
+		size_t line;
+		str file;
 
-		TestCase(VoidFunc func, str name);
+		TestCase(VoidFunc func, str name, size_t line, str filename);
 	};
 
 
@@ -33,10 +35,14 @@ namespace MyTest {
 	struct TestStates {
 		bool failed = false;
 		str test_case_name = nullptr;
+		size_t line;
+		str file;
 
-		void reset(str new_test_case_name) {
+		void reset(const TestCase& test_case) {
 			failed = false;
-			test_case_name = new_test_case_name;
+			test_case_name = test_case.name;
+			line = test_case.line;
+			file = test_case.file;
 		}
 
 		void log_fail();
@@ -51,10 +57,10 @@ namespace MyTest {
 	template <typename L, typename R>
 	void output_left_right(const L& left, const R& right) {
 		if constexpr (can_output<L>) {
-			std::cout << "    left: " << left;
+			std::cout << "  left: " << left;
 		}
 		if constexpr (can_output<R>) {
-			std::cout << "    right: " << right;
+			std::cout << "  right: " << right;
 		}
 		std::cout << std::endl;
 	}
@@ -70,30 +76,20 @@ namespace MyTest {
 } // namespace MyTest;
 
 
-
 #define CONCAT_IMPL(x, y) x ## y
 #define CONCAT(x, y) CONCAT_IMPL(x, y)
 
 
 #define TEST_CASE_IMPL(testname, funcname, objname) \
-namespace MyTestFuncs { static void funcname(); static MyTest::TestCase objname {funcname, testname}; } \
+namespace MyTestFuncs { static void funcname(); \
+static MyTest::TestCase objname(funcname, testname, __LINE__, __FILE__); } \
 static void MyTestFuncs::funcname()
 
 #define TEST_CASE(name) TEST_CASE_IMPL(name, CONCAT(test_func_, __COUNTER__), CONCAT(test_obj_, __COUNTER__))
 
 
-#define ASSERT_EQ(left, right) do { \
-auto left_value = left; auto right_value = right; \
-if (!(left_value == right_value)) { \
-	MyTest::states.log_fail(); \
-	MyTest::output_assert_info(__LINE__, __FILE__, "_EQ", #left, #right); \
-	MyTest::output_left_right(left, right); \
-	return; \
-} \
-} while(0)
-
-
+#include "details/assert.inl"
 
 #ifdef MY_TEST_MAIN
-	#include "main.inl"
+	#include "details/my_cpp_test_main.inl"
 #endif
